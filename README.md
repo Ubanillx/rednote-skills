@@ -1,6 +1,6 @@
 # rednote-skills
 
-`rednote-skills` 是一个面向小红书工作流的 Codex Skill 仓库。它通过共享的真实 Chrome 用户目录和 Patchright 驱动浏览器，复用同一份登录态完成一组常见操作：
+`rednote-skills` 是一个面向小红书工作流的 Skill 仓库。它通过共享的真实 Chrome 用户目录和 Patchright 驱动浏览器，复用同一份登录态完成一组常见操作：
 
 - 保存笔记草稿
 - 按关键词搜索并导出笔记链接
