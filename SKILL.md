@@ -5,6 +5,52 @@ description: "Use this skill for Xiaohongshu workflows via a shared real Chrome 
 
 # rednote-skill
 
+## Directory structure
+
+```
+rednote-skills/
+├── scripts/
+│   ├── _bootstrap_env.py            # Venv bootstrap helper
+│   ├── action_delay.py              # Delay/cooldown management
+│   ├── batch_context_comments.py    # Batch comment sending with context
+│   ├── batch_dump_notes.py          # Batch export note data (JSON+XLSX) from URL list
+│   ├── batch_generate_comment_materials.py  # Generate comment materials from search
+│   ├── batch_search_keywords.py     # Batch keyword search
+│   ├── browser_profile.py           # Chrome profile management
+│   ├── collect_note.py              # Collect/bookmark notes
+│   ├── comment_note.py              # Send comments to notes
+│   ├── convert_notes_to_xlsx.py     # Convert JSON notes to styled Excel (no browser)
+│   ├── dedupe_utils.py              # Shared deduplication utilities
+│   ├── dedup_urls.py                # Deduplicate URLs against index (no browser)
+│   ├── dump_note.py                 # Export single note (markdown or JSON)
+│   ├── export_profile_note_comments.py  # Export profile note comments to Excel/JSON
+│   ├── follow_user.py               # Follow users
+│   ├── interact_helpers.py          # Helper functions for interactions
+│   ├── like_note.py                 # Like notes
+│   ├── list_profile_notes.py        # List notes from a user profile
+│   ├── manual_login.py              # Manual login helper
+│   ├── note_content.py              # Note content extraction utilities
+│   ├── official_risk_guard.py       # Risk detection and guard
+│   ├── publish_note.py              # Save notes as drafts
+│   ├── search_note_by_key_word.py   # Search notes by keyword
+│   └── validate_cookies.py          # Cookie/login validation
+├── deliveries/                      # Final deliverables
+├── logs/rednote/                    # Runtime logs and dedupe indexes
+├── tmp/rednote/                     # Temporary or debug files
+├── SKILL.md                         # This file
+├── README.md                        # Project documentation
+└── requirements.txt                 # Python dependencies
+```
+
+## Script naming conventions
+
+- `batch_<action>_<target>.py` — Batch operations that process multiple items (e.g., `batch_dump_notes.py`, `batch_search_keywords.py`)
+- `<action>_<target>.py` — Single-item operations (e.g., `dump_note.py`, `like_note.py`, `search_note_by_key_word.py`)
+- `<descriptor>_utils.py` — Shared utility modules (e.g., `dedupe_utils.py`)
+- `<action>_<target>_to_<format>.py` — Format conversion scripts (e.g., `convert_notes_to_xlsx.py`)
+
+Browser scripts launch Chrome; pure data scripts (dedup_urls, convert_notes_to_xlsx) do not.
+
 ## Core rules
 
 - Use the shared real Chrome profile through Patchright. Do not switch to a temporary cookie browser.
@@ -152,14 +198,14 @@ Operational rules:
 Run the business script first. Only login when needed.
 
 ```bash
-cd skills/rednote-skills
+cd rednote-skills
 python3 scripts/manual_login.py
 ```
 
 Optional check:
 
 ```bash
-cd skills/rednote-skills
+cd rednote-skills
 python3 scripts/validate_cookies.py
 ```
 
@@ -169,7 +215,7 @@ python3 scripts/validate_cookies.py
 ## Common commands
 
 ```bash
-cd skills/rednote-skills
+cd rednote-skills
 
 # Draft save only
 python3 scripts/publish_note.py
@@ -180,10 +226,29 @@ python3 scripts/publish_note.py "测试｜图文混排" $'第一段\n\n[[image:/
 python3 scripts/search_note_by_key_word.py "关键词" --top_n 5 --delay-seconds 3
 python3 scripts/search_note_by_key_word.py "关键词" --start-index 21 --end-index 40 --filter '{"sort_by":"最新","note_type":"图文"}' --delay-seconds 3
 python3 scripts/batch_search_keywords.py --input /absolute/path/to/keywords.json --top-n 5 --delay-seconds 3
-python3 scripts/batch_generate_comment_materials.py --input /absolute/path/to/keywords.json --top-n 5 --delay-seconds 3
+python3 scripts/batch_generate_comment_materials.py --input /absolute/path/to/keywords.json --top-n 5 --delay-seconds 3 --dedupe-path logs/rednote/note_dedupe_index.json
 python3 scripts/list_profile_notes.py --profile-url "https://www.xiaohongshu.com/user/profile/<user_id>" --output /absolute/path/to/profile_notes.json
 python3 scripts/list_profile_notes.py --user-id "<user_id>" --limit 0 --delay-seconds 3
 python3 scripts/dump_note.py "<note_url>"
+python3 scripts/dump_note.py "<note_url>" --format json
+python3 scripts/dump_note.py "<note_url>" --format json --output /absolute/path/to/note.json
+
+# Deduplicate URLs (pure data, no browser)
+python3 scripts/dedup_urls.py --input /absolute/path/to/urls.json --output /absolute/path/to/unique_urls.json
+python3 scripts/dedup_urls.py --input /absolute/path/to/urls.json --dedupe-path logs/rednote/note_dedupe_index_<topic>.json --update-index
+python3 scripts/dedup_urls.py --input /absolute/path/to/urls.json --dry-run
+
+# Batch export notes (browser required)
+python3 scripts/batch_dump_notes.py --input /absolute/path/to/urls.json --output-dir deliveries/bid_notes --dedupe-path logs/rednote/note_dedupe_index.json --limit 30 --delay-seconds 3
+python3 scripts/batch_dump_notes.py --input /absolute/path/to/urls.json --dry-run
+
+# Convert JSON notes to Excel (pure data, no browser)
+python3 scripts/convert_notes_to_xlsx.py --input /absolute/path/to/notes.json --output /absolute/path/to/summary.xlsx
+python3 scripts/convert_notes_to_xlsx.py --input /absolute/path/to/notes.json --output /absolute/path/to/summary.xlsx --columns "title,nickname,note_url,tags,desc,publish_time,liked_count"
+
+# Export profile note comments
+python3 scripts/export_profile_note_comments.py --profile-url "https://www.xiaohongshu.com/user/profile/<user_id>" --output-dir deliveries/rednote_profile_comment_sheets
+python3 scripts/export_profile_note_comments.py --input /absolute/path/to/profile_notes.json --limit 10
 
 # Interactions
 python3 scripts/like_note.py "<note_url>" --delay-seconds 5

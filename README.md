@@ -159,6 +159,7 @@ python3 scripts/batch_generate_comment_materials.py --input /absolute/path/to/ke
 
 ```bash
 python3 scripts/dump_note.py "<note_url>"
+python3 scripts/dump_note.py "<note_url>" --format json --output /absolute/path/to/note.json
 ```
 
 搜索说明：
@@ -182,6 +183,39 @@ python3 scripts/list_profile_notes.py --user-id "<user_id>" --limit 0 --delay-se
 - `--profile-url` 和 `--user-id` 二选一
 - `--limit 0` 表示尽可能拉取页面可见的全部笔记
 - 输出 JSON 中包含 `profile_url`、`count` 和 `notes`
+
+### 批量收集→导出→转换
+
+完整的工作流示例：从 URL 列表出发，经过去重、批量导出，最终生成 Excel 汇总表。
+
+```bash
+# Step 1: URL 去重（纯数据，不启动浏览器）
+python3 scripts/dedup_urls.py \
+  --input deliveries/bid_notes/bid_notes_raw.json \
+  --output deliveries/bid_notes/unique_urls.json \
+  --dedupe-path logs/rednote/note_dedupe_index_bid.json \
+  --update-index
+
+# Step 2: 批量导出笔记数据（启动浏览器）
+python3 scripts/batch_dump_notes.py \
+  --input deliveries/bid_notes/unique_urls.json \
+  --output-dir deliveries/bid_notes \
+  --dedupe-path logs/rednote/note_dedupe_index_bid.json \
+  --limit 30 --delay-seconds 3
+
+# Step 3: 转换为 Excel 汇总表（纯数据，不启动浏览器）
+python3 scripts/convert_notes_to_xlsx.py \
+  --input deliveries/bid_notes/<run_id>.json \
+  --output deliveries/bid_notes/summary.xlsx \
+  --columns "title,nickname,note_url,tags,desc,publish_time,liked_count"
+```
+
+说明：
+
+- `dedup_urls.py` 只做 URL 级别的去重，不需要启动浏览器
+- `batch_dump_notes.py` 会逐条打开笔记页面，自动去重（note_id + author），输出 JSON 和 XLSX
+- `convert_notes_to_xlsx.py` 可以对任意步骤输出的 JSON 进行格式转换，支持自定义列
+- 三个脚本可以独立使用，也可以串联成完整流水线
 
 ### 执行互动
 
@@ -301,14 +335,19 @@ python3 scripts/batch_search_keywords.py --input /absolute/path/to/keywords.json
 
 - [SKILL.md](/Users/zhiot/Codes/rednote-skills/SKILL.md)：Skill 定义、规则、命令和工作流说明
 - [requirements.txt](/Users/zhiot/Codes/rednote-skills/requirements.txt)：Python 依赖
+- [scripts/dedupe_utils.py](/Users/zhiot/Codes/rednote-skills/scripts/dedupe_utils.py)：共享去重工具模块
 - [scripts/manual_login.py](/Users/zhiot/Codes/rednote-skills/scripts/manual_login.py)：手动登录
 - [scripts/validate_cookies.py](/Users/zhiot/Codes/rednote-skills/scripts/validate_cookies.py)：登录态校验
 - [scripts/publish_note.py](/Users/zhiot/Codes/rednote-skills/scripts/publish_note.py)：保存草稿
 - [scripts/search_note_by_key_word.py](/Users/zhiot/Codes/rednote-skills/scripts/search_note_by_key_word.py)：关键词搜索
 - [scripts/batch_search_keywords.py](/Users/zhiot/Codes/rednote-skills/scripts/batch_search_keywords.py)：批量搜索
 - [scripts/batch_generate_comment_materials.py](/Users/zhiot/Codes/rednote-skills/scripts/batch_generate_comment_materials.py)：批量生成评论素材数据
+- [scripts/batch_dump_notes.py](/Users/zhiot/Codes/rednote-skills/scripts/batch_dump_notes.py)：批量导出笔记数据（JSON + XLSX）
+- [scripts/dedup_urls.py](/Users/zhiot/Codes/rednote-skills/scripts/dedup_urls.py)：URL 去重（纯数据，不启动浏览器）
+- [scripts/convert_notes_to_xlsx.py](/Users/zhiot/Codes/rednote-skills/scripts/convert_notes_to_xlsx.py)：JSON 笔记转 Excel（纯数据）
 - [scripts/list_profile_notes.py](/Users/zhiot/Codes/rednote-skills/scripts/list_profile_notes.py)：主页笔记列表
-- [scripts/dump_note.py](/Users/zhiot/Codes/rednote-skills/scripts/dump_note.py)：导出单条笔记详情
+- [scripts/dump_note.py](/Users/zhiot/Codes/rednote-skills/scripts/dump_note.py)：导出单条笔记详情（支持 markdown/json）
+- [scripts/export_profile_note_comments.py](/Users/zhiot/Codes/rednote-skills/scripts/export_profile_note_comments.py)：导出主页笔记短评 Excel/JSON
 - [scripts/comment_note.py](/Users/zhiot/Codes/rednote-skills/scripts/comment_note.py)：发送评论
 - [scripts/like_note.py](/Users/zhiot/Codes/rednote-skills/scripts/like_note.py)：点赞
 - [scripts/collect_note.py](/Users/zhiot/Codes/rednote-skills/scripts/collect_note.py)：收藏

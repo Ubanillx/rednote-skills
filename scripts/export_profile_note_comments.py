@@ -14,8 +14,8 @@ from action_delay import resolve_delay_seconds, sleep_random_cooldown
 from batch_generate_comment_materials import (
     build_article_info,
     fetch_note_data,
-    parse_note_id_from_url,
 )
+from dedupe_utils import parse_note_id_from_url
 from list_profile_notes import list_profile_notes
 from note_content import clean_text
 from official_risk_guard import OfficialRiskDetectedError, RiskStopTracker
